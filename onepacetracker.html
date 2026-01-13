@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>One Pace Master Tracker</title>
+    <link rel="icon" type="image/png" href="logpose.png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Special+Elite&display=swap');
+
+        :root {
+            --pirate-red: #c8472c;
+            --leather: #412a1e;
+            --gold: #f8de3c;
+            --parchment: #fdf5e6;
+            --sea-blue: #105edd;
+            --deep-ocean: #0b3075;
+            --ink: #1a1a1a;
+        }
+
+        body {
+            font-family: 'Special Elite', 'Georgia', serif;
+            margin: 0; padding: 20px;
+            display: flex; flex-direction: column; align-items: center;
+            background: #0b3075 url('bg.jpg') no-repeat center center fixed;
+            background-size: cover;
+            color: var(--leather);
+            background-blend-mode: multiply;
+        }
+
+        .container { max-width: 1300px; width: 100%; }
+
+        .header-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 0px;
+        }
+
+        .main-logo {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            pointer-events: none;
+            max-width: 450px;
+            width: 100%;
+            height: auto;
+            -webkit-user-drag: none;
+            z-index: -4;
+        }
+
+        h1 { 
+            text-align: center; color: var(--gold); 
+            text-shadow: 4px 4px 0px var(--pirate-red), 6px 6px 0px var(--leather);
+            letter-spacing: 4px; 
+            margin-top: -33px; 
+            margin-bottom: 16px;
+            font-size: 3em; font-weight: 900;
+            transform: rotate(-1deg);
+            z-index: 2;
+        }
+
+        .dashboard {
+            background: var(--parchment);
+            background-image: url('https://www.transparenttextures.com/patterns/aged-paper.png');
+            padding: 25px; 
+            border: 8px solid var(--leather);
+            box-shadow: 15px 15px 0px rgba(0,0,0,0.4);
+            margin-bottom: 50px;
+            margin-top: -40px;
+            position: sticky; top: 15px; z-index: 1000;
+        }
+
+        .dashboard-header {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 3px solid var(--leather);
+            margin-bottom: 15px; padding-bottom: 10px;
+        }
+
+        .header-settings { display: flex; align-items: center; gap: 20px; }
+        .setting-item { display: flex; align-items: center; gap: 8px; }
+        .setting-item label { font-size: 0.8em; font-weight: 900; color: var(--leather); text-transform: uppercase; }
+        .setting-item input { 
+            background: transparent; border: 2px solid var(--leather);
+            padding: 5px; font-family: 'Special Elite', serif;
+            font-weight: 800; width: 50px; text-align: center;
+        }
+
+        .unit-control select { 
+            background: var(--leather); color: var(--gold);
+            padding: 6px; border: none; font-family: 'Special Elite', serif;
+            cursor: pointer; 
+        }
+
+        .progress-label { 
+            display: flex; justify-content: space-between; 
+            font-weight: 900; font-size: 0.9em; margin-bottom: 5px; 
+            color: var(--leather); 
+        }
+
+        .progress-container {
+            background: rgba(0,0,0,0.1); border: 2px solid var(--leather); height: 18px;
+            width: 100%; margin-bottom: 15px;
+        }
+        .progress-bar {
+            background: var(--pirate-red);
+            height: 100%; width: 0%; 
+            transition: width 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .summary-grid {
+            display: flex; gap: 15px; margin-top: 20px;
+        }
+
+        .stat-card {
+            background: rgba(0,0,0,0.05); padding: 15px 10px;
+            border: 2px dashed var(--leather); text-align: center;
+            flex: 1;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card.hidden { display: none; }
+
+        .stat-card h4 { 
+            margin: 0; font-size: 1.1em; font-weight: 900; 
+            text-transform: uppercase; color: var(--leather);
+            letter-spacing: 1px; border-bottom: 1px solid rgba(65, 42, 30, 0.2);
+            padding-bottom: 5px; margin-bottom: 8px;
+        }
+        
+        .stat-card p { margin: 0; font-size: 1.8em; font-weight: 900; color: var(--pirate-red); }
+
+        /* UPDATED STICKY HINT TEXT */
+        #instruction-hint {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 2px dotted rgba(65, 42, 30, 0.3);
+            font-weight: 900;
+            font-size: 0.9em;
+            color: var(--leather);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .reset-btn { 
+            background: var(--pirate-red); color: white; border: none;
+            padding: 5px 15px; font-family: 'Special Elite', serif;
+            cursor: pointer; box-shadow: 3px 3px 0px var(--leather);
+        }
+
+        .arc-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 30px; width: 100%; }
+        
+        .arc-card {
+            background: var(--parchment);
+            background-image: url('https://www.transparenttextures.com/patterns/paper-fibers.png');
+            min-height: 200px; padding: 20px; border: 2px solid var(--leather);
+            display: flex; flex-direction: column; justify-content: space-between;
+            position: relative; cursor: pointer; transition: 0.3s;
+            box-shadow: 8px 8px 0px var(--leather);
+        }
+
+        .arc-card:hover { 
+            transform: scale(1.05); background-color: white;
+            box-shadow: 12px 12px 0px var(--pirate-red); z-index: 10;
+        }
+
+        .arc-card.completed { filter: sepia(0.5); }
+        .arc-card.completed::after {
+            content: "COMPLETED"; position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%) rotate(-15deg);
+            font-size: 2.8em; color: rgba(180, 0, 0, 0.8);
+            font-weight: 900; border: 6px double rgba(180, 0, 0, 0.8);
+            padding: 5px 15px; pointer-events: none;
+            background: rgba(253, 245, 230, 0.2);
+        }
+
+        .arc-name { 
+            font-size: 1.8em; font-weight: 900; color: var(--leather);
+            text-transform: uppercase; border-bottom: 2px solid var(--leather);
+            margin-bottom: 5px;
+        }
+        
+        .arc-meta { font-size: 0.8em; font-weight: 700; color: var(--leather); line-height: 1.4; }
+        .og-tag { color: var(--leather); opacity: 0.6; }
+        .savings-tag { color: var(--sea-blue); font-weight: 900; display: block; margin-top: 5px; }
+        
+        .time-box { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 15px; }
+        .watch-time { font-size: 2.2em; font-weight: 900; color: var(--pirate-red); }
+        .watch-label { font-size: 0.7em; text-transform: uppercase; color: var(--leather); font-weight: 800; }
+
+        #status-msg { 
+            color: var(--gold); margin-bottom: 20px; font-weight: 900; 
+            letter-spacing: 2px; text-align: center;
+        }
+
+        .onboarding-hint { color: var(--pirate-red); animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-section">
+        <img src="logo.png" alt="One Pace" class="main-logo">
+        <h1>Progress Tracker</h1>
+        <div id="status-msg">SYNCING LOG POSE...</div>
+    </div>
+
+    <div class="dashboard">
+        <div class="dashboard-header">
+            <div class="header-settings">
+                <div class="setting-item">
+                    <label>Speed</label>
+                    <input type="number" id="speed" value="1.0" step="0.1" min="0.5" oninput="updateUI()">
+                </div>
+                <div class="setting-item">
+                    <label>Intro skip? (mins)</label>
+                    <input type="number" id="skip" value="0" step="0.5" min="0" oninput="updateUI()">
+                </div>
+                <button class="reset-btn" onclick="resetSettings()">RESET</button>
+            </div>
+
+            <div class="unit-control">
+                <select id="time-unit" onchange="updateUI()">
+                    <option value="mins">MINUTES</option>
+                    <option value="hours" selected>HOURS</option>
+                    <option value="days">DAYS</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="progress-label">
+            <span id="percent-text">0% COMPLETED</span>
+            <span id="foot-count">0 / 0</span>
+        </div>
+        <div class="progress-container"><div id="progress-bar" class="progress-bar"></div></div>
+
+        <div class="summary-grid">
+            <div class="stat-card"><h4>ORIGINAL</h4><p id="og-total">0h</p></div>
+            <div class="stat-card"><h4>ONE PACE</h4><p id="pace-total">0h</p></div>
+            <div class="stat-card hidden" id="boost-card"><h4>ADJUSTED</h4><p id="actual-total">0h</p></div>
+            <div class="stat-card"><h4>SAVED</h4><p id="edit-saved">0h</p></div>
+            <div class="stat-card"><h4>REMAINING</h4><p id="remaining-total">0h</p></div>
+        </div>
+
+        <div id="instruction-hint">
+            ⚓ Select the <span style="color:var(--pirate-red)">latest arc</span> you finished watching to map your journey.
+        </div>
+    </div>
+
+    <div id="arc-list" class="arc-list"></div>
+</div>
+
+<script>
+    const RAW_URL = "https://docs.google.com/spreadsheets/d/1HQRMJgu_zArp-sLnvFMDzOyjdsht87eFLECxMK858lA/export?format=csv&gid=0";
+    let arcData = [];
+    let completedArcs = JSON.parse(localStorage.getItem('onePaceV12_Progress')) || [];
+
+    window.onload = () => {
+        Papa.parse("https://corsproxy.io/?" + encodeURIComponent(RAW_URL), {
+            download: true, header: true, skipEmptyLines: true,
+            complete: (results) => {
+                arcData = results.data.filter(r => r['Arcs'] && r['Arcs'] !== 'Totals').map(r => ({
+                    name: r['Arcs'],
+                    episodes: parseInt(r['# of Pace Ep.']) || 0,
+                    paceMins: parseFloat(String(r['Pace Minutes']).replace(/,/g, '')) || 0,
+                    pieceMins: parseFloat(String(r['Piece Minutes']).replace(/,/g, '')) || 0
+                }));
+                
+                updateInstructionVisibility();
+                updateUI();
+            }
+        });
+    };
+
+    function updateInstructionVisibility() {
+        const hint = document.getElementById('instruction-hint');
+        const status = document.getElementById('status-msg');
+        if (completedArcs.length > 0) {
+            hint.style.display = 'none';
+            status.innerText = "DATA SYNCED";
+        } else {
+            hint.style.display = 'block';
+            status.innerHTML = '<span class="onboarding-hint">AWAITING ORDERS...</span>';
+        }
+    }
+
+    function resetSettings() {
+        document.getElementById('speed').value = 1.0;
+        document.getElementById('skip').value = 0;
+        updateUI();
+    }
+
+    function toggleArc(index) {
+        if (completedArcs.includes(index)) {
+            completedArcs = completedArcs.filter(i => i < index); 
+        } else {
+            for (let j = 0; j <= index; j++) if (!completedArcs.includes(j)) completedArcs.push(j);
+        }
+        localStorage.setItem('onePaceV12_Progress', JSON.stringify(completedArcs));
+        
+        updateInstructionVisibility();
+        updateUI();
+    }
+
+    function formatTime(mins) {
+        const unit = document.getElementById('time-unit').value;
+        if (unit === 'days') return (mins / 1440).toFixed(1) + 'd';
+        if (unit === 'hours') return (mins / 60).toFixed(1) + 'h';
+        return Math.round(mins) + 'm';
+    }
+
+    function updateUI() {
+        const speed = parseFloat(document.getElementById('speed').value) || 1;
+        const skip = parseFloat(document.getElementById('skip').value) || 0;
+        const list = document.getElementById('arc-list');
+        list.innerHTML = '';
+
+        const boostCard = document.getElementById('boost-card');
+        if (speed !== 1.0 || skip > 0) { boostCard.classList.remove('hidden'); } 
+        else { boostCard.classList.add('hidden'); }
+
+        let totalPaceMinsAll = arcData.reduce((acc, a) => acc + a.paceMins, 0);
+        let watchedPaceMins = 0, watchedPieceMins = 0, watchedAdjustedMins = 0, remainingAdjustedMins = 0;
+
+        arcData.forEach((arc, i) => {
+            const isDone = completedArcs.includes(i);
+            const arcAdjusted = Math.max(0, (arc.paceMins - (arc.episodes * skip)) / speed);
+            const arcSavingsMins = arc.pieceMins - arc.paceMins;
+
+            if (isDone) {
+                watchedPaceMins += arc.paceMins;
+                watchedPieceMins += arc.pieceMins;
+                watchedAdjustedMins += arcAdjusted;
+            } else {
+                remainingAdjustedMins += arcAdjusted;
+            }
+
+            const card = document.createElement('div');
+            card.className = `arc-card ${isDone ? 'completed' : ''}`;
+            card.onclick = () => toggleArc(i);
+            card.innerHTML = `
+                <div>
+                    <div class="arc-name">${arc.name}</div>
+                    <div class="arc-meta">
+                        ${arc.episodes} EPISODES | <span class="og-tag">ORIGINAL: ${formatTime(arc.pieceMins)}</span>
+                        <span class="savings-tag">SAVED ${formatTime(arcSavingsMins)}</span>
+                    </div>
+                </div>
+                <div class="time-box">
+                    <div>
+                        <div class="watch-label">TIME TO WATCH</div>
+                        <div class="watch-time">${formatTime(arcAdjusted)}</div>
+                    </div>
+                </div>
+            `;
+            list.appendChild(card);
+        });
+
+        const footPct = Math.round((watchedPaceMins / totalPaceMinsAll) * 100) || 0;
+        document.getElementById('progress-bar').style.width = footPct + '%';
+        document.getElementById('percent-text').innerText = `${footPct}% COMPLETED`;
+        document.getElementById('foot-count').innerText = `${formatTime(watchedPaceMins)} / ${formatTime(totalPaceMinsAll)}`;
+
+        document.getElementById('og-total').innerText = formatTime(watchedPieceMins);
+        document.getElementById('pace-total').innerText = formatTime(watchedPaceMins);
+        document.getElementById('actual-total').innerText = formatTime(watchedAdjustedMins);
+        document.getElementById('remaining-total').innerText = formatTime(remainingAdjustedMins);
+        document.getElementById('edit-saved').innerText = formatTime(watchedPieceMins - watchedPaceMins);
+    }
+</script>
+</body>
+</html>
